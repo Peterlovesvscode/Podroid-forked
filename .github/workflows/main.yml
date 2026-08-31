@@ -22,7 +22,7 @@ jobs:
           java-version: '21'
 
       - name: Build everything
-        run: ./build-all.sh all
+        run: ./build-all.sh qemu
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
