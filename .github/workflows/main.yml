@@ -1,0 +1,31 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Register QEMU binfmt handlers (arm64)
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Build everything
+        run: ./build-all.sh all
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: podroid-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
