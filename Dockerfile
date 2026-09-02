@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
-RUN wget -q https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-${KERNEL_VERSION}.tar.xz \
+RUN wget https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-${KERNEL_VERSION}.tar.xz \
     && tar xf linux-${KERNEL_VERSION}.tar.xz \
     && rm linux-${KERNEL_VERSION}.tar.xz
 
@@ -189,9 +189,9 @@ RUN mkdir -p /output \
 FROM alpine:3.24 AS downloader
 RUN apk add --no-cache wget cpio gzip tar xorriso
 WORKDIR /downloads
-RUN wget -q https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/aarch64/alpine-netboot-3.24.1-aarch64.tar.gz \
+RUN wget https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/aarch64/alpine-netboot-3.24.1-aarch64.tar.gz \
     && mkdir -p /netboot && tar -xf alpine-netboot-3.24.1-aarch64.tar.gz -C /netboot
-RUN wget -q https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/aarch64/alpine-virt-3.24.1-aarch64.iso \
+RUN wget https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/aarch64/alpine-virt-3.24.1-aarch64.iso \
     && mkdir -p /iso && xorriso -osirrox on -indev alpine-virt-3.24.1-aarch64.iso -extract / /iso 2>/dev/null || true
 
 # Stage 2: Build the custom rootfs (aarch64) — no linux-virt; modules come from kernel-builder
@@ -233,7 +233,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN pip3 install --break-system-packages meson 2>/dev/null || pip3 install meson
 
 # NDK
-RUN wget -q https://dl.google.com/android/repository/android-ndk-r27c-linux.zip -O /tmp/ndk.zip \
+RUN wget https://dl.google.com/android/repository/android-ndk-r27c-linux.zip -O /tmp/ndk.zip \
     && unzip -q /tmp/ndk.zip -d /opt && mv /opt/android-ndk-r27c /opt/ndk && rm /tmp/ndk.zip
 ENV NDK=/opt/ndk LLVM=/opt/ndk/toolchains/llvm/prebuilt/linux-x86_64 PREFIX=/opt/deps
 ENV CC="${LLVM}/bin/aarch64-linux-android26-clang" AR="${LLVM}/bin/llvm-ar" RANLIB="${LLVM}/bin/llvm-ranlib"
@@ -258,7 +258,7 @@ RUN printf '#ifndef PODROID_ICONV_H\n#define PODROID_ICONV_H\n#include <stddef.h
     && cp ${PREFIX}/lib/libiconv.a ${LLVM}/sysroot/usr/lib/aarch64-linux-android/26/libiconv.a
 RUN wget -q https://download.gnome.org/sources/glib/2.82/glib-2.82.5.tar.xz&& tar xf glib-2.82.5.tar.xz && cd glib-2.82.5 && meson setup _build --cross-file /opt/cross-android-aarch64.ini --prefix ${PREFIX} --default-library static -Dselinux=disabled -Dlibmount=disabled && ninja -C _build install
 RUN wget -q https://cairographics.org/releases/pixman-0.44.2.tar.xz && tar xf pixman-0.44.2.tar.xz && cd pixman-0.44.2 && meson setup _build --cross-file /opt/cross-android-aarch64.ini --prefix ${PREFIX} --default-library static -Da64-neon=disabled && ninja -C _build install
-RUN wget -q --timeout=60 --tries=3 --waitretry=10 https://download.savannah.gnu.org/releases/attr/attr-2.5.2.tar.gz && tar xf attr-2.5.2.tar.gz && cd attr-2.5.2 && ./configure --host=aarch64-linux-android --prefix=${PREFIX} --enable-static --disable-shared CC="${CC}" && make -j$(nproc) install && cp ${PREFIX}/lib/libattr.a ${LLVM}/sysroot/usr/lib/aarch64-linux-android/26/libattr.a
+RUN wget https://mirrors.ocf.berkeley.edu/nongnu/attr/attr-2.5.2.tar.gz && tar xf attr-2.5.2.tar.gz && cd attr-2.5.2 && ./configure --host=aarch64-linux-android --prefix=${PREFIX} --enable-static --disable-shared CC="${CC}" && make -j$(nproc) install && cp ${PREFIX}/lib/libattr.a ${LLVM}/sysroot/usr/lib/aarch64-linux-android/26/libattr.a
 RUN git clone --depth=1 https://github.com/kaniini/libucontext.git /tmp/libucontext && make -C /tmp/libucontext ARCH=aarch64 CC="${CC}" EXPORT_UNPREFIXED=yes && install -Dm644 /tmp/libucontext/libucontext.a ${PREFIX}/lib/libucontext.a && install -Dm644 /tmp/libucontext/include/libucontext/libucontext.h ${PREFIX}/include/libucontext/libucontext.h && install -Dm644 /tmp/libucontext/arch/common/include/libucontext/bits.h ${PREFIX}/include/libucontext/bits.h \
     && printf '#ifndef PODROID_UCONTEXT_SHIM_H\n#define PODROID_UCONTEXT_SHIM_H\n#include_next <ucontext.h>\n#include <libucontext/libucontext.h>\n#define getcontext libucontext_getcontext\n#define makecontext libucontext_makecontext\n#define setcontext libucontext_setcontext\n#define swapcontext libucontext_swapcontext\n#endif\n' > ${PREFIX}/include/ucontext.h
 
@@ -272,7 +272,7 @@ RUN wget -q https://github.com/libusb/libusb/releases/download/v1.0.27/libusb-1.
     && make -j$(nproc) install
 
 # QEMU Build (committed flags — no LTO, no -O3 — plus minimal Android compat patches)
-RUN wget -q https://download.qemu.org/${QEMU_DIR}.tar.xz && tar xf ${QEMU_DIR}.tar.xz
+RUN wget https://download.qemu.org/${QEMU_DIR}.tar.xz && tar xf ${QEMU_DIR}.tar.xz
 RUN sed -i "s/rt = cc.find_library('rt', required: true)/rt = cc.find_library('rt', required: false)/" ${QEMU_DIR}/meson.build
 RUN printf '#undef st_atime_nsec\n#undef st_mtime_nsec\n#undef st_ctime_nsec\n' | cat - ${QEMU_DIR}/fsdev/9p-marshal.h > /tmp/9p-marshal.h && mv /tmp/9p-marshal.h ${QEMU_DIR}/fsdev/9p-marshal.h
 # ivshmem-{server,client} also call shm_open; stub their meson.build files since we don't ship them
